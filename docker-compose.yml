@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:latest
+    container_name: db
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_tfg
+      MYSQL_DATABASE: laliga_db
+      MYSQL_USER: analista
+      MYSQL_PASSWORD: futbol_password
+    volumes:
+      - db_data:/var/lib/mysql
+
+  web:
+    build: .
+    container_name: footdata_web
+    restart: always
+    # Eliminamos el port 80 de aquí. Ahora el tráfico entra por Caddy
+    volumes:
+      - ./web/src:/var/www/html
+    depends_on:
+      - db
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy_proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

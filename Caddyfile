@@ -1,0 +1,3 @@
+footdata.duckdns.org {
+    reverse_proxy web:80
+}
