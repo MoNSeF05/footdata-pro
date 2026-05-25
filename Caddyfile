@@ -1,3 +1,11 @@
+# He elegido Caddy como proxy inverso perimetral por su capacidad para 
+# automatizar de forma nativa la gestión de identidades criptográficas (SSL/TLS).
+# El servidor implementa y renueva de forma autónoma los certificados 
+# mediante el protocolo ACME, mitigando riesgos de interrupción por expiración.
+# Actúa como único punto de entrada, forzando la redirección segura a HTTPS.
 footdata.duckdns.org {
+# Aquí intercepto las peticiones que entran por mi dominio
+# y las redirijo de forma interna al contenedor de mi aplicación web
+# a través del puerto 80 interno de la red de Docker.
     reverse_proxy web:80
 }
