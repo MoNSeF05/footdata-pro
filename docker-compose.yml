@@ -1,46 +1,63 @@
+# He seleccionado una arquitectura basada en microservicios contenerizados 
+# porque me permite aislar completamente el entorno de ejecución de cada 
+# componente (servidor web, base de datos y automatizaciones).
+# Esto garantiza que una vulnerabilidad en la capa web no comprometa 
+# de forma directa el almacenamiento de datos o el sistema Host.
 version: '3.8'
 
 services:
+  # Este es el contenedor para el motor de mi base de datos relacional
   db:
     image: mariadb:latest
     container_name: db
     restart: always
+    # Abro el puerto 3306 temporalmente para comunicarme desde fuera si me hace falta
     ports:
       - "3306:3306"
+    # Configuro las credenciales y el nombre de la base de datos de mi liga
     environment:
       MYSQL_ROOT_PASSWORD: root_password_tfg
       MYSQL_DATABASE: laliga_db
       MYSQL_USER: analista
       MYSQL_PASSWORD: futbol_password
+    # Monto un volumen persistente para que los datos no se borren si el contenedor se apaga
     volumes:
       - db_data:/var/lib/mysql
 
+  # El contenedor que levanta mi aplicación web personalizada
   web:
     build: .
     container_name: footdata_web
     restart: always
-    # Eliminamos el port 80 de aquí. Ahora el tráfico entra por Caddy
+    # He quitado el puerto 80 de aquí porque el proxy perimetral Caddy es el que recibe el tráfico ahora
+    # Enlazo la carpeta de desarrollo local para aplicar cambios en vivo en el código PHP
     volumes:
       - ./web/src:/var/www/html
+    # Le digo que no arranque hasta que el contenedor de la base de datos esté listo
     depends_on:
       - db
 
+  # Levanto Adminer para tener un panel web gráfico de administración de la base de datos
   adminer:
     image: adminer
     container_name: adminer
     restart: always
+    # Lo saco por el puerto 8080 para acceder a las tablas desde el navegador cómodamente
     ports:
       - "8080:8080"
     depends_on:
       - db
 
+  # Mi pasarela de seguridad perimetral y proxy inverso
   caddy:
     image: caddy:latest
     container_name: caddy_proxy
     restart: always
+    # Abro los puertos estándar HTTP y HTTPS para que la web sea visible en Internet
     ports:
       - "80:80"
       - "443:443"
+    # Mapeo el Caddyfile de configuración y creo volúmenes para guardar los certificados SSL automáticos
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -48,6 +65,7 @@ services:
     depends_on:
       - web
 
+# Defino las unidades de almacenamiento persistente independientes del ciclo de vida de los contenedores
 volumes:
   db_data:
   caddy_data:
